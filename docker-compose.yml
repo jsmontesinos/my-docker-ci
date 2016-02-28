@@ -1,0 +1,58 @@
+version: '2'
+services:
+  postgresql:
+    restart: always
+    image: sameersbn/postgresql:9.4-13
+    environment:
+      - DB_USER=gitlab
+      - DB_PASS=password
+      - DB_NAME=gitlabhq_production
+    container_name: postgresql-gitlab
+    volumes:
+      - /srv/docker/gitlab/postgresql:/var/lib/postgresql
+  gitlab:
+    restart: always
+    image: sameersbn/gitlab:8.5.1
+    container_name: gitlab-gitlab
+    ports:
+      - "10080:80"
+      - "10022:22"
+    environment:
+      - GITLAB_SECRETS_DB_KEY_BASE=cfdp3KVsvbzf3n3TH3qWdsJLM9nTTKFL43rNfhMWtjhsmCpm7jmtqJPtkscJg7gt
+      - GITLAB_HOST=localhost
+      - GITLAB_PORT=10080
+      - GITLAB_SSH_PORT=10022
+      - DB_USER=gitlab
+      - DB_PASS=password
+      - DB_NAME=gitlabhq_production
+      - DB_ADAPTER=postgresql
+      - DB_HOST=postgresql-gitlab
+      - DB_PORT=5432
+      - REDIS_HOST=redis-gitlab
+      - REDIS_PORT=6379
+    depends_on:
+      - postgresql
+      - redis
+    volumes:
+      - /srv/docker/gitlab/gitlab:/home/git/data
+  redis:
+    restart: always
+    image: sameersbn/redis:latest
+    volumes:
+      - /srv/docker/gitlab/redis:/var/lib/redis
+    container_name: redis-gitlab
+  jenkins:
+    image: jenkins
+    ports:
+      - "10081:8080"
+      - "50000:50000"
+    container_name: jenkins-gitlab
+    volumes:
+      - /srv/docker/gitlab/jenkins:/var/jenkins_home
+  sonarqube:
+    image: sonarqube
+    ports:
+      - "9000:9000"
+      - "9092:9092"
+    container_name: sonarqube-gitlab
+
